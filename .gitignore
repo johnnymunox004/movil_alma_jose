@@ -1,0 +1,53 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+app-example
+# Archivos ejecutables
+*.exe
+
+# Archivos específicos
+app/assets/Git-2.47.1.2-64-bit.exe
+app/assets/Cursor Setup 0.45.11 - x64.exe
+
+# Dependencias
+/node_modules
+/.expo
+/.expo-shared
+
+# Archivos de sistema
+.DS_Store
+*.log
