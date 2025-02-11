@@ -5,10 +5,19 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      [
+        "expo-av",
+        {
+          "microphonePermission": false
+        }
+      ]
     ],
     "name": "reproductor-musica",
     "slug": "reproductor-musica",
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "assets": [
+      "./assets/canciones/*",
+      "./assets/images/*"
+    ]
   }
 }

@@ -1,93 +1,123 @@
 import { Audio } from 'expo-av';
 
-const audioFiles = {
-  'no-debes-pensar': require('../app/assets/Alma Morena - No Debes Pensar En Mi.mp3'),
-  'quiero-darte-amor': require('../app/assets/Alma Morena - Quiero Darte Amor [ivsKaVh-WNM].mp3'),
-};
-
-const songTitles = {
-  'no-debes-pensar': 'No Debes Pensar En Mi',
-  'quiero-darte-amor': 'Quiero Darte Amor',
-};
-
-const songsList = [
-  { id: 'no-debes-pensar', title: 'No Debes Pensar En Mi' },
-  { id: 'quiero-darte-amor', title: 'Quiero Darte Amor' },
+// Define songs with correct paths
+const songs = [
+  {
+    id: 'no-debes-pensar',
+    title: 'No Debes Pensar En Mi',
+    artist: 'Alma Morena',
+    // Updated paths to match project structure
+    audio: require('../assets/canciones/no-debes-pensar.mp3'),
+    image: require('../assets/images/alma1.jpeg')
+  },
+  {
+    id: 'quiero-darte-amor',
+    title: 'Quiero Darte Amor',
+    artist: 'Alma Morena',
+    audio: require('../assets/canciones/quiero-darte-amor.mp3'),
+    image: require('../assets/images/alma2.jpg')
+  }
 ];
 
 class AudioManager {
   constructor() {
     this.sound = null;
-    this.isPlaying = false;
-    this.currentSong = null;
+    this.isLoaded = false;
+    this.songsList = songs;
+    this._initializeAudio();
   }
 
-  async loadAudio(songKey) {
+  async _initializeAudio() {
     try {
-      console.log('Loading audio for songKey:', songKey); // Agrega este log
-      if (!audioFiles[songKey]) {
-        throw new Error(`Audio file for songKey "${songKey}" not found`);
-      }
-      if (this.sound) {
-        await this.sound.unloadAsync();
-      }
-      const { sound } = await Audio.Sound.createAsync(audioFiles[songKey]);
-      this.sound = sound;
-      this.currentSong = songKey;
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        staysActiveInBackground: true,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
     } catch (error) {
-      console.error('Error loading audio:', error);
+      console.error('Error initializing audio:', error);
     }
   }
 
-  async playSound() {
+  async loadAudio(songId) {
     try {
-      if (this.sound) {
-        await this.sound.playAsync();
-        this.isPlaying = true;
+      await this.unloadSound();
+
+      const song = this.songsList.find(s => s.id === songId);
+      if (!song) {
+        throw new Error(`Song not found: ${songId}`);
       }
+
+      console.log('Loading audio:', song.title);
+      const { sound, status } = await Audio.Sound.createAsync(
+        song.audio,
+        { shouldPlay: false },
+        this._onPlaybackStatusUpdate
+      );
+
+      this.sound = sound;
+      this.isLoaded = true;
+      return { sound, status };
     } catch (error) {
-      console.error('Error playing sound:', error);
+      console.error('Error loading audio:', error);
+      throw error;
+    }
+  }
+
+  async unloadSound() {
+    if (this.sound) {
+      try {
+        await this.sound.stopAsync();
+        await this.sound.unloadAsync();
+        this.sound = null;
+        this.isLoaded = false;
+      } catch (error) {
+        console.error('Error unloading sound:', error);
+      }
+    }
+  }
+
+  setSongsList(songs) {
+    this.songsList = songs;
+  }
+
+  _onPlaybackStatusUpdate = (status) => {
+    if (status.didJustFinish) {
+      this.onSongComplete && this.onSongComplete();
+    }
+  };
+
+  async playSound() {
+    if (this.sound) {
+      try {
+        const status = await this.sound.getStatusAsync();
+        if (status.isLoaded) {
+          await this.sound.playAsync();
+        }
+      } catch (error) {
+        console.error('Error playing sound:', error);
+      }
     }
   }
 
   async pauseSound() {
-    try {
-      if (this.sound) {
-        await this.sound.pauseAsync();
-        this.isPlaying = false;
-      }
-    } catch (error) {
-      console.error('Error pausing sound:', error);
+    if (this.sound) {
+      await this.sound.pauseAsync();
     }
   }
 
-  async stopSound() {
-    try {
-      if (this.sound) {
-        await this.sound.stopAsync();
-        this.isPlaying = false;
-      }
-    } catch (error) {
-      console.error('Error stopping sound:', error);
+  async seekTo(position) {
+    if (this.sound) {
+      await this.sound.setPositionAsync(position * 1000);
     }
   }
 
-  getAllSongs() {
-    return Object.keys(audioFiles).map(key => ({
-      id: key,
-      title: songTitles[key],
-      artist: 'Alma Morena'
-    }));
+  setOnComplete(callback) {
+    this.onSongComplete = callback;
   }
 }
 
-const loadSong = async (index) => {
-  const songKey = songsList[index].id;
-  console.log('Loading song with key:', songKey); // Agrega este log
-  await audioManager.loadAudio(songKey);
-  setSongIndex(index);
-  const status = await audioManager.getStatus();
-  setDuration(status?.durationMillis || 0);
-};
-
+export { songs };
 export default new AudioManager();
